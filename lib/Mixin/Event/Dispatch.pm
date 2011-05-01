@@ -13,9 +13,21 @@ Mixin::Event::Dispatch - mixin methods for simple event/message dispatch framewo
 
 =head1 SYNOPSIS
 
+ # Add a handler then invoke it
  my $obj = Some::Class->new;
  $obj->add_handler_for_event(some_event => sub { my $self = shift; warn "had some_event: @_"; });
  $obj->invoke_event(some_event => 'message here');
+
+ # Attach event handler for all on_XXX named parameters
+ package Event::User;
+ sub configure {
+	my $self = shift;
+	my %args = @_;
+	$self->add_handler_for_event(
+		map { (/^on_(.*)$/) ? ($1 => $args{$_}) : () } for keys %args
+	);
+	return $self;
+ }
 
 =head1 DESCRIPTION
 
@@ -39,10 +51,11 @@ sub invoke_event {
 	my $ev = shift;
 	++$self->{event_count}->{$ev};
 
+	my @param = @_;
 	my $run_event = sub {
 		my $code = shift;
 		try {
-			!$code->($self, @_);
+			!$code->($self, @param);
 		} catch {
 			die $_ if $ev eq 'event_error';
 			$self->invoke_event(event_error => $_) or die "$_ and no event_error handler found";
