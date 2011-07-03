@@ -1,4 +1,5 @@
 {{$NEXT}}
+	Rename event_stack to event_handlers since the original name was misleading (thanks mst)
 
 0.001     2011-07-02 21:44:07 Europe/London
 	Initial version.

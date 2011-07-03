@@ -5,7 +5,7 @@ use warnings;
 use List::UtilsBy ();
 use Try::Tiny;
 
-our $VERSION = 0.001;
+our $VERSION = 0.002;
 
 =head1 NAME
 
@@ -49,9 +49,7 @@ Returns $self if a handler was found, undef if not.
 =cut
 
 sub invoke_event {
-	my $self = shift;
-	my $ev = shift;
-	my @param = @_;
+	my ($self, $ev, @param) = @_;
 
 # Run a given coderef for the event, returning true if it should then be removed as a handler.
 	my $run_event = sub {
@@ -67,11 +65,11 @@ sub invoke_event {
 		}
 	};
 
-	my $stack = $self->event_stack;
+	my $stack = $self->event_handlers;
 # If we have handlers for this event, use them directly.
 	if($stack && scalar @{$stack->{$ev} || [] }) {
 		# Run all the queued code for this event, removing the handlers that return false.
-		List::UtilsBy::extract_by { $run_event->($_) } @{$self->event_stack->{$ev}};
+		List::UtilsBy::extract_by { $run_event->($_) } @{$self->event_handlers->{$ev}};
 		return $self;
 	} elsif(my $code = $self->can("on_$ev")) {
 # Otherwise check for on_event handler and use that instead.
@@ -96,38 +94,38 @@ Adds handlers to the stack for the given events.
 sub add_handler_for_event {
 	my $self = shift;
 
-# Init if we haven't got a valid event_stack yet
-	$self->clear_event_handlers unless $self->event_stack;
+# Init if we haven't got a valid event_handlers yet
+	$self->clear_event_handlers unless $self->event_handlers;
 
 # Add the defined handlers
 	while(@_) {
 		my ($ev, $code) = splice @_, 0, 2;
-		push @{$self->event_stack->{$ev}}, $code;
+		push @{$self->event_handlers->{$ev}}, $code;
 	}
 	return $self;
 }
 
-=head2 event_stack
+=head2 event_handlers
 
 Accessor for the event stack itself - should return a hashref which maps event names to arrayrefs for
 the currently defined handlers.
 
 =cut
 
-sub event_stack { shift->{event_stack} }
+sub event_handlers { shift->{event_handlers} }
 
 =head2 clear_event_handlers
 
 Removes all queued event handlers.
 
-Will also be called when defining the first handler to create the initial L</event_stack> entry, should
-be overridden by subclass if something other than $self->{event_stack} should be used.
+Will also be called when defining the first handler to create the initial L</event_handlers> entry, should
+be overridden by subclass if something other than $self->{event_handlers} should be used.
 
 =cut
 
 sub clear_event_handlers {
 	my $self = shift;
-	$self->{event_stack} = { };
+	$self->{event_handlers} = { };
 	return $self;
 }
 
