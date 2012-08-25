@@ -5,7 +5,7 @@ use warnings;
 use List::UtilsBy ();
 use Try::Tiny;
 
-our $VERSION = 0.004;
+our $VERSION = 0.005;
 
 =head1 NAME
 
@@ -15,8 +15,24 @@ Mixin::Event::Dispatch - mixin methods for simple event/message dispatch framewo
 
  # Add a handler then invoke it
  my $obj = Some::Class->new;
+ # Note that handlers will be called for each instance of an event until they return false,
+ # at which point the handler will be removed, so for a permanent handler, make sure to return 1.
  $obj->add_handler_for_event(some_event => sub { my $self = shift; warn "had some_event: @_"; 1; });
  $obj->invoke_event(some_event => 'message here');
+
+ # Subscribe to events - subscribers will be called with the object and any parameters each
+ # time the event is raised.
+ $obj->subscribe_to_event(another_event => (my $code = sub {
+   my $self = shift;
+   warn "Event data: @_";
+ }));
+ $obj->invoke_event(another_event => 'like this');
+ # should get output 'Event data: like this' 
+ $obj->unsubscribe_from_event(another_event => $code);
+
+ $obj->track_events_for(sub {
+   $obj->invoke_event(another_event => 'like this');
+ });
 
  # Attach event handler for all on_XXX named parameters
  package Event::User;
