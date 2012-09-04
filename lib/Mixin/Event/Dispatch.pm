@@ -4,8 +4,17 @@ use strict;
 use warnings;
 use List::UtilsBy ();
 use Try::Tiny;
+use Mixin::Event::Dispatch::Event;
 
 our $VERSION = 0.005;
+
+# Key name to use for event handlers. Nothing should be
+# accessing this directly so we don't mind something
+# unreadable
+use constant EVENT_HANDLER_KEY => '__MED_event_handlers';
+
+# Legacy support, newer classes probably would turn this off
+use constant EVENT_DISPATCH_ON_FALLBACK => 1;
 
 =head1 NAME
 
@@ -14,25 +23,30 @@ Mixin::Event::Dispatch - mixin methods for simple event/message dispatch framewo
 =head1 SYNOPSIS
 
  # Add a handler then invoke it
- my $obj = Some::Class->new;
- # Note that handlers will be called for each instance of an event until they return false,
- # at which point the handler will be removed, so for a permanent handler, make sure to return 1.
- $obj->add_handler_for_event(some_event => sub { my $self = shift; warn "had some_event: @_"; 1; });
- $obj->invoke_event(some_event => 'message here');
+ package Some::Class;
+ use parent qw(Mixin::Event::Dispatch);
+ sub new { bless {}, shift }
 
- # Subscribe to events - subscribers will be called with the object and any parameters each
- # time the event is raised.
+ my $obj = Some::Class->new;
+
+ # Subscribe to events - subscribers will be called with an event object,
+ # and any event parameters, each time the event is raised.
  $obj->subscribe_to_event(another_event => (my $code = sub {
-   my $self = shift;
-   warn "Event data: @_";
+   my $ev = shift;
+   warn "[] @_";
  }));
  $obj->invoke_event(another_event => 'like this');
  # should get output 'Event data: like this' 
  $obj->unsubscribe_from_event(another_event => $code);
 
- $obj->track_events_for(sub {
+ $obj->trace_events_for(sub {
    $obj->invoke_event(another_event => 'like this');
  });
+
+ # Note that handlers will be called for each instance of an event until they return false,
+ # at which point the handler will be removed, so for a permanent handler, make sure to return 1.
+ $obj->add_handler_for_event(some_event => sub { my $self = shift; warn "had some_event: @_"; 1; });
+ $obj->invoke_event(some_event => 'message here');
 
  # Attach event handler for all on_XXX named parameters
  package Event::User;
@@ -62,15 +76,9 @@ then this error will be re-thrown. As with the other handlers, you can have more
 
 =back
 
-=head1 API HISTORY
-
-Note that 0.002 changed to use L<event_handlers> instead of C< event_stack > for storing the available handlers (normally only L<invoke_event> and
-L<add_handler_for_event> are expected to be called directly).
-
 =head1 METHODS
 
 =cut
-
 
 =head2 invoke_event
 
@@ -83,34 +91,118 @@ Returns $self if a handler was found, undef if not.
 =cut
 
 sub invoke_event {
-	my ($self, $ev, @param) = @_;
-
-# Run a given coderef for the event, returning true if it should then be removed as a handler.
-	my $run_event = sub {
-		my $code = shift;
-		return try {
-			!$code->($self, @param);
-		} catch {
-			die $_ if $ev eq 'event_error';
-			$self->invoke_event(event_error => $_) or die "$_ and no event_error handler found";
-
-			# Remove this event handler since it appears to be broken
-			return 1;
-		}
-	};
-
-	my $handlers = $self->event_handlers;
-# If we have handlers for this event, use them directly.
-	if($handlers && scalar @{$handlers->{$ev} || [] }) {
-		# Run all the queued code for this event, removing the handlers that return false.
-		List::UtilsBy::extract_by { $run_event->($_) } @{$self->event_handlers->{$ev}};
-		return $self;
-	} elsif(my $code = $self->can("on_$ev")) {
-# Otherwise check for on_event handler and use that instead.
-		$run_event->($code);
+	my ($self, $event_name, @param) = @_;
+	my $handlers = $self->event_handlers->{$event_name} || [];
+	local $@;
+	unless(@$handlers) {
+		return $self unless $self->EVENT_DISPATCH_ON_FALLBACK;
+		return $self unless my $code = $self->can("on_$event_name");
+		eval {
+			$code->($self, @_);
+			1;
+		} or do {
+			die $@ if $event_name eq 'event_error';
+			$self->invoke_event(event_error => $@) or die "$@ and no event_error handler found";
+		};
 		return $self;
 	}
-	return undef;
+
+#	my $ev = Mixin::Event::Dispatch::Event->new(
+#		name => $event_name,
+#		instance => $self,
+#		handlers => [ @$handlers ],
+#	);
+	(bless {
+		name => $event_name,
+		instance => $self,
+		handlers => [ @$handlers ],
+	}, 'Mixin::Event::Dispatch::Event')->dispatch(@param);
+#		List::UtilsBy::extract_by {
+#			!$_->($self, @param)
+#		} @$handlers;
+#		1;
+	return $self;
+}
+
+=head2 subscribe_to_event
+
+Subscribe the given coderef to the named event.
+
+Called with a list of event name and handler pairs. An
+event name can be any string value. The handler is one
+of the following:
+
+=over 4
+
+=item * a coderef will be used directly as a handler,
+and will be passed the L<Mixin::Event::Dispatch::Event>
+object representing this event.
+
+=item * a plain string will be used as a method name
+
+=item * a subclass of L<Mixin::Event::Dispatch> will
+be used to delegate the event - use this if you have
+an object hierarchy and want the parent object to handle
+events on the current object
+
+=back
+
+If you have an overloaded object which is both a
+L<Mixin::Event::Dispatch> subclass and provides a
+coderef overload, it will default to event delegation
+behaviour. To ensure the overloaded coderef is used
+instead, pass \&$obj instead.
+
+All handlers will be given an event (a
+L<Mixin::Event::Dispatch::Event> object) as the first
+parameter, and any passed event parameters as the
+remainder of @_.
+
+Example usage:
+
+ my $parent = $obj->parent;
+ $obj->subscribe_to_event(
+   connect => sub { warn shift->name }, # warns 'connect'
+   connect => $parent, # $parent->invoke_event(connect => @_)
+   connect => \&$parent, # $parent's overloaded &{} 
+   joined  => 'on_joined', # $parent's overloaded &{} 
+ );
+
+Note that multiple handlers can be assigned to the same
+event name.
+
+=cut
+
+sub subscribe_to_event {
+	my $self = shift;
+
+# Init if we haven't got a valid event_handlers yet
+	$self->clear_event_handlers unless $self->event_handlers;
+
+# Add the defined handlers
+	while(@_) {
+		my ($ev, $code) = splice @_, 0, 2;
+		die 'Undefined event?' unless defined $ev;
+		push @{$self->event_handlers->{$ev}}, $code;
+	}
+	return $self;
+}
+
+sub unsubscribe_from_event {
+	my $self = shift;
+
+# Init if we haven't got a valid event_handlers yet
+	$self->clear_event_handlers unless $self->event_handlers;
+
+# Add the defined handlers
+	while(@_) {
+		my ($ev, $code) = splice @_, 0, 2;
+		die 'Undefined event?' unless defined $ev;
+		List::UtilsBy::extract_by {
+			$code
+		} @{$self->event_handlers->{$ev}} or die "Was not subscribed to $ev for $code";
+	}
+	return $self;
 }
 
 =head2 add_handler_for_event
@@ -134,7 +226,14 @@ sub add_handler_for_event {
 # Add the defined handlers
 	while(@_) {
 		my ($ev, $code) = splice @_, 0, 2;
-		push @{$self->event_handlers->{$ev}}, $code;
+		# Support legacy interface via wrapper
+		# * handler is passed $self
+		# * returning false means we want to unsubscribe
+		push @{$self->event_handlers->{$ev}}, sub {
+			my $ev = shift;
+			return if $code->($ev->instance, @_);
+			$ev->unsubscribe;
+		};
 	}
 	return $self;
 }
@@ -146,7 +245,7 @@ the currently defined handlers.
 
 =cut
 
-sub event_handlers { shift->{event_handlers} }
+sub event_handlers { shift->{+EVENT_HANDLER_KEY} ||= {} }
 
 =head2 clear_event_handlers
 
@@ -159,13 +258,20 @@ be overridden by subclass if something other than $self->{event_handlers} should
 
 sub clear_event_handlers {
 	my $self = shift;
-	$self->{event_handlers} = { };
+	$self->{+EVENT_HANDLER_KEY} = { };
 	return $self;
 }
 
 1;
 
 __END__
+
+=head1 API HISTORY
+
+Version 0.005 implemented subscribe_to_event and L<Mixin::Event::Dispatch::Event>.
+
+Version 0.002 changed to use L<event_handlers> instead of C< event_stack > for storing the available handlers (normally only L<invoke_event> and
+L<add_handler_for_event> are expected to be called directly).
 
 =head1 WHY NOT A ROLE?
 
