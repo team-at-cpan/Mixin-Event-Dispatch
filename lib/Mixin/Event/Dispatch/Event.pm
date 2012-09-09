@@ -6,7 +6,7 @@ use Try::Tiny;
 
 our $VERSION = 0.005;
 
-use constant DEBUG => 0;
+use constant DEBUG => $ENV{MIXIN_EVENT_DISPATCH_DEBUG};
 
 =encoding utf8
 
@@ -267,6 +267,11 @@ sub debug_print {
 	printf "[%s] %s\n", $self->name, join ' ', @_;
 	$self
 }
+
+*DESTROY = sub {
+	my $self = shift;
+	$self->debug_print("Destroying");
+} if DEBUG;
 
 1;
 
