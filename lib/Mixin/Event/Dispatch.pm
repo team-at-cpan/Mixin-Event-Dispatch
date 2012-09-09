@@ -16,6 +16,8 @@ use constant EVENT_HANDLER_KEY => '__MED_event_handlers';
 # Legacy support, newer classes probably would turn this off
 use constant EVENT_DISPATCH_ON_FALLBACK => 1;
 
+=encoding utf8
+
 =head1 NAME
 
 Mixin::Event::Dispatch - mixin methods for simple event/message dispatch framework
@@ -61,7 +63,7 @@ Mixin::Event::Dispatch - mixin methods for simple event/message dispatch framewo
 
 =head1 DESCRIPTION
 
-Add this in as a parent to your class, and it'll provide some methods for defining event handlers (L</add_event_handler>) and calling them (L</invoke_event>).
+Add this in as a parent to your class, and it'll provide some methods for defining event handlers (L</subscribe_to_event> or L</add_handler_for_event>) and calling them (L</invoke_event>).
 
 Note that handlers should return 0 for a one-off handler, and 1 if it should be called again on the next event.
 
@@ -188,6 +190,30 @@ sub subscribe_to_event {
 	return $self;
 }
 
+=head2 unsubscribe_from_event
+
+Removes the given coderef from the list of handlers for this event.
+
+Expects pairs of (event name, coderef) entries for the events to
+unsubscribe from.
+
+Example usage:
+
+ $obj->subscribe_to_event(
+   some_event => (my $code = sub { }),
+ );
+ $obj->unsubscribe_from_event(
+   some_event => $code,
+ );
+
+If you need to unsubscribe from the event currently being
+handled, try the L<Mixin::Event::Dispatch::Event/unsubscribe>
+method.
+
+Returns $self.
+
+=cut
+
 sub unsubscribe_from_event {
 	my $self = shift;
 
@@ -210,9 +236,9 @@ sub unsubscribe_from_event {
 Adds handlers to the stack for the given events.
 
  $self->add_handler_for_event(
- 	new_message	=> sub { warn @_; 1 },
- 	login		=> sub { warn @_; 1 },
- 	logout		=> sub { warn @_; 1 },
+   new_message => sub { warn @_; 1 },
+   login => sub { warn @_; 1 },
+   logout => sub { warn @_; 1 },
  );
 
 =cut

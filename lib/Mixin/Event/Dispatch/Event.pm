@@ -8,18 +8,25 @@ our $VERSION = 0.005;
 
 use constant DEBUG => 0;
 
+=encoding utf8
+
 =head1 NAME
 
 Mixin::Event::Dispatch::Event - an event object
 
 =head1 SYNOPSIS
 
+ my $self = shift;
  my $ev = Mixin::Event::Dispatch::Event->new(
    name => 'some_event',
    instance => $self,
  );
+ $ev->dispatch;
 
 =head1 DESCRIPTION
+
+Provides an object with which to interact with the current
+event.
 
 =head1 METHODS
 
@@ -42,7 +49,8 @@ object if we were invoked within an existing handler
 
 =back
 
-Time is of the essence, hence the peculiar implementation.
+We're assuming that time is of the essence,
+hence the peculiar implementation.  
 
 Returns $self.
 
@@ -116,10 +124,6 @@ sub handlers {
 	@{$self->{remaining}||[]}
 }
 
-=head1 METHODS
-
-=cut
-
 =head2 stop
 
 Stop processing for this event. Prevents any further event
@@ -168,6 +172,17 @@ sub dispatch {
 	};
 	$self
 }
+
+=head2 play
+
+Continue the current event. Semantincs are subject to change
+so avoid this and consider L</defer> instead. Currently does
+nothing anyway.
+
+Returns $self.
+
+=cut
+
 sub play { shift }
 
 =head2 defer
@@ -198,6 +213,28 @@ sub defer {
 	$self;
 }
 
+=head2 unsubscribe
+
+Unsubscribes the current handler from the event that we're
+processing at the moment.
+
+Can be used to implement one-shot or limited-lifetime event
+handlers:
+
+ my $count = 0;
+ $obj->subscribeto_event(
+   som_event => sub {
+     my $ev = shift;
+     return $ev->unsubscribe if ++$count > 3;
+     print "Current count: $count\n";
+   }
+ );
+ $obj->invoke_event('some_event') for 1..5;
+
+Returns $self.
+
+=cut
+
 sub unsubscribe {
 	my $self = shift;
 	$self->debug_print("Unsubscribing") if DEBUG;
@@ -207,6 +244,23 @@ sub unsubscribe {
 	);
 	$self
 }
+
+=head2 debug_print
+
+Show a debug message, should only be called if the appropriate
+(compile-time) flag is set:
+
+ $self->debug_print(...) if DEBUG;
+
+rather than expecting
+
+ $self->debug_print(...);
+
+to check for you.
+
+Returns $self.
+
+=cut
 
 sub debug_print {
 	my $self = shift;
