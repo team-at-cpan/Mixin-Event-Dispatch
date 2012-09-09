@@ -6,11 +6,12 @@ use List::UtilsBy ();
 use Try::Tiny;
 use Mixin::Event::Dispatch::Event;
 
-our $VERSION = 0.005;
+our $VERSION = 1.000;
 
 # Key name to use for event handlers. Nothing should be
 # accessing this directly so we don't mind something
-# unreadable
+# unreadable, it's only used in two methods which subclasses
+# can override at will
 use constant EVENT_HANDLER_KEY => '__MED_event_handlers';
 
 # Legacy support, newer classes probably would turn this off
@@ -95,8 +96,10 @@ Returns $self if a handler was found, undef if not.
 sub invoke_event {
 	my ($self, $event_name, @param) = @_;
 	my $handlers = $self->event_handlers->{$event_name} || [];
-	local $@;
 	unless(@$handlers) {
+		local $@;
+		# Legacy flag - when set, pass control to on_$event_name
+		# if we don't have a handler defined.
 		return $self unless $self->EVENT_DISPATCH_ON_FALLBACK;
 		return $self unless my $code = $self->can("on_$event_name");
 		eval {
@@ -109,20 +112,22 @@ sub invoke_event {
 		return $self;
 	}
 
+# We should really do this...
 #	my $ev = Mixin::Event::Dispatch::Event->new(
 #		name => $event_name,
 #		instance => $self,
 #		handlers => [ @$handlers ],
 #	);
+#	$ev->dispatch;
+# ... but this gives better performance (examples/benchmark.pl)
 	(bless {
 		name => $event_name,
 		instance => $self,
+		# Passing a copy since we might change these later and
+		# we do not want those changes to affect any events
+		# currently in flight
 		handlers => [ @$handlers ],
 	}, 'Mixin::Event::Dispatch::Event')->dispatch(@param);
-#		List::UtilsBy::extract_by {
-#			!$_->($self, @param)
-#		} @$handlers;
-#		1;
 	return $self;
 }
 
@@ -167,7 +172,7 @@ Example usage:
    connect => sub { warn shift->name }, # warns 'connect'
    connect => $parent, # $parent->invoke_event(connect => @_)
    connect => \&$parent, # $parent's overloaded &{} 
-   joined  => 'on_joined', # $parent's overloaded &{} 
+   joined  => 'on_joined', # the on_joined method in $obj
  );
 
 Note that multiple handlers can be assigned to the same
@@ -294,21 +299,57 @@ __END__
 
 =head1 API HISTORY
 
-Version 0.005 implemented subscribe_to_event and L<Mixin::Event::Dispatch::Event>.
+Version 1.000 implemented L</subscribe_to_event> and L<Mixin::Event::Dispatch::Event>.
 
-Version 0.002 changed to use L<event_handlers> instead of C< event_stack > for storing the available handlers (normally only L<invoke_event> and
+Version 0.002 changed to use L</event_handlers> instead of C< event_stack > for storing the available handlers (normally only L<invoke_event> and
 L<add_handler_for_event> are expected to be called directly).
 
-=head1 WHY NOT A ROLE?
+=head1 ROLE vs. MIXIN
 
 Most role systems should be able to use this class - either directly, or through a thin wrapper which adds
 any required boilerplate. Try L<Moose> or L<Role::Tiny> / L<Moo::Role> for that.
 
 Alternatively, you could use this as a component via L<Class::C3::Componentised>.
 
+(I haven't tried any of the above options myself, please let me know if I'm spreading
+disinformation here)
+
 =head1 SEE ALSO
 
-There are at least a dozen similar modules already on CPAN, eventually I'll add a list of them here.
+There are at least a dozen similar modules already on CPAN, here's a small sample:
+
+=over 4
+
+=item * L<Object::Event> - event callback interface used in several L<AnyEvent> modules.
+
+=item * L<Ambrosia::Event> - part of the L<Ambrosia> web application framework
+
+=item * L<Net::MessageBus> - event subscription via TCP-based message bus
+
+=item * L<Event::Wrappable> - wrapping for event listeners
+
+=item * L<MooseX::Event> - node.js-inspired events, for Moose users
+
+=back
+
+Note that some frameworks such as L<Reflex> and L<POE> already have comprehensive message-passing
+and callback interfaces.
+
+If you're looking for usage examples, try the following:
+
+=over 4
+
+=item * L<EntityModel> - uses this as the underlying event-passing mechanism, with some
+support in L<EntityModel::Class> for indicating event usage metadata
+
+=item * L<Protocol::PostgreSQL> - mostly an adapter converting PostgreSQL database messages
+to/from events using this class
+
+=item * L<Protocol::IMAP> - the same, but for the IMAPv4bis protocol
+
+=item * L<Protocol::XMPP> - and again for Jabber/XMPP
+
+=back
 
 =head1 AUTHOR
 
@@ -319,5 +360,6 @@ accessor (to support non-hashref objects) and who patiently tried to explain abo
 
 =head1 LICENSE
 
-Copyright Tom Molesworth 2011. Licensed under the same terms as Perl itself.
+Copyright Tom Molesworth 2011-2012, based on code originally part of L<EntityModel>.
+Licensed under the same terms as Perl itself.
 
