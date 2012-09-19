@@ -166,9 +166,9 @@ sub dispatch {
 		}
 		1;
 	} or do {
-		$self->debug_print("Exception $@ from [@_]") if DEBUG;
-		die $@ if $self->name eq 'event_error';
-		$self->instance->invoke_event(event_error => $@) or die "$@ and no event_error handler found";
+		my $err = $@;
+		$self->debug_print("Exception $err from [@_]") if DEBUG;
+		die $err;
 	};
 	$self
 }
