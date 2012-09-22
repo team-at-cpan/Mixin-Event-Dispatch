@@ -50,7 +50,7 @@ object if we were invoked within an existing handler
 =back
 
 We're assuming that time is of the essence,
-hence the peculiar implementation.  
+hence the peculiar implementation.
 
 Returns $self.
 
@@ -162,7 +162,7 @@ sub dispatch {
 	# an underpowered system, vs. 30k+ with plain eval.
 	eval {
 		while(!$self->is_stopped && @{$self->{handlers}}) {
-			($self->{current_handler} = shift @{$self->{handlers}})->($self, @_) 
+			($self->{current_handler} = shift @{$self->{handlers}})->($self, @_)
 		}
 		1;
 	} or do {

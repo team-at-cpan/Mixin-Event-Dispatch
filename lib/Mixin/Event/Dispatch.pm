@@ -39,7 +39,7 @@ Mixin::Event::Dispatch - mixin methods for simple event/message dispatch framewo
    warn "[] @_";
  }));
  $obj->invoke_event(another_event => 'like this');
- # should get output 'Event data: like this' 
+ # should get output 'Event data: like this'
  $obj->unsubscribe_from_event(another_event => $code);
 
  $obj->trace_events_for(sub {
@@ -171,7 +171,7 @@ Example usage:
  $obj->subscribe_to_event(
    connect => sub { warn shift->name }, # warns 'connect'
    connect => $parent, # $parent->invoke_event(connect => @_)
-   connect => \&$parent, # $parent's overloaded &{} 
+   connect => \&$parent, # $parent's overloaded &{}
    joined  => 'on_joined', # the on_joined method in $obj
  );
 
