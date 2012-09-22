@@ -6,7 +6,7 @@ use List::UtilsBy ();
 use Try::Tiny;
 use Mixin::Event::Dispatch::Event;
 
-our $VERSION = 1.000;
+our $VERSION = '1.000';
 
 # Key name to use for event handlers. Nothing should be
 # accessing this directly so we don't mind something

@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+1         2012-09-22 11:52:51 Europe/London
 	Provide Mixin::Event::Dispatch::Event class and a more advanced observer
 	model via subscribe_to_event / unsubscribe_from_event.
 
