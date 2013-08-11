@@ -361,6 +361,6 @@ accessor (to support non-hashref objects) and who patiently tried to explain abo
 
 =head1 LICENSE
 
-Copyright Tom Molesworth 2011-2012, based on code originally part of L<EntityModel>.
+Copyright Tom Molesworth 2011-2013, based on code originally part of L<EntityModel>.
 Licensed under the same terms as Perl itself.
 
