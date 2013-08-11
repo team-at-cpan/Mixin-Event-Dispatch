@@ -3,10 +3,11 @@ package Mixin::Event::Dispatch;
 use strict;
 use warnings;
 use List::UtilsBy ();
+use Scalar::Util ();
 use Try::Tiny;
 use Mixin::Event::Dispatch::Event;
 
-our $VERSION = '1.000';
+our $VERSION = '1.001';
 
 # Key name to use for event handlers. Nothing should be
 # accessing this directly so we don't mind something
@@ -230,7 +231,7 @@ sub unsubscribe_from_event {
 		my ($ev, $code) = splice @_, 0, 2;
 		die 'Undefined event?' unless defined $ev;
 		List::UtilsBy::extract_by {
-			$code
+			Scalar::Util::refaddr($code) == Scalar::Util::refaddr($_)
 		} @{$self->event_handlers->{$ev}} or die "Was not subscribed to $ev for $code";
 	}
 	return $self;
