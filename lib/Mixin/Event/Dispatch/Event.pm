@@ -3,8 +3,7 @@ use strict;
 use warnings;
 use List::UtilsBy ();
 use Try::Tiny;
-
-our $VERSION = 0.005;
+use Scalar::Util qw(reftype);
 
 use constant DEBUG => $ENV{MIXIN_EVENT_DISPATCH_DEBUG};
 
@@ -140,15 +139,9 @@ sub stop {
 
 =head2 dispatch
 
-Dispatches this event.
-
-Takes the following (named) parameters:
-
-=over 4
-
-=item *
-
-=back
+Dispatches this event. Takes the parameters originally passed to
+L<Mixin::Event::Dispatch/invoke_event> (with the exception of
+the event name), and passes it on to the defined handlers.
 
 Returns $self.
 
@@ -162,7 +155,16 @@ sub dispatch {
 	# an underpowered system, vs. 30k+ with plain eval.
 	eval {
 		while(!$self->is_stopped && @{$self->{handlers}}) {
-			($self->{current_handler} = shift @{$self->{handlers}})->($self, @_)
+			local $self->{current_handler} = my $h = shift @{$self->{handlers}};
+			if(ref $h) {
+				if(reftype($h) eq 'CODE') {
+					$h->($self, @_)
+				} else {
+					$h->invoke_event($self->name, @_)
+				}
+			} else {
+				$self->instance->$h($self, @_)
+			}
 		}
 		1;
 	} or do {
