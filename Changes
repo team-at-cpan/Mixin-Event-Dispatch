@@ -1,5 +1,11 @@
 {{$NEXT}}
 	No new features
+
+	Test fixes:
+	* Updated dzil Test::Compile plugin for win32 issue (RT88783)
+
+1.003     2013-09-10 17:37:27 Europe/London
+	No new features
 	
 	Dependency fixes:
 	* Test::CheckDeps removed - seems that Module::Build::Tiny doesn't play nicely
