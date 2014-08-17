@@ -50,7 +50,9 @@ object if we were invoked within an existing handler
 =back
 
 We're assuming that time is of the essence,
-hence the peculiar implementation.
+hence the peculiar implementation. Also note that this
+constructor is rarely called in practice -
+L<Mixin::Event::Dispatch> uses bless directly.
 
 Returns $self.
 
