@@ -347,6 +347,10 @@ If you're looking for usage examples, try the following:
 
 =over 4
 
+=item * L<Adapter::Async>
+
+=item * L<Net::Async::AMQP>
+
 =item * L<EntityModel> - uses this as the underlying event-passing mechanism, with some
 support in L<EntityModel::Class> for indicating event usage metadata
 
