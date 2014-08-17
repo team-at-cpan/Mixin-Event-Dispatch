@@ -2,11 +2,8 @@ package Mixin::Event::Dispatch;
 # ABSTRACT: Mixin methods for simple event/message dispatch framework
 use strict;
 use warnings;
-use List::UtilsBy ();
-use Scalar::Util ();
-use Mixin::Event::Dispatch::Event;
 
-our $VERSION = '1.005';
+our $VERSION = '1.006';
 
 # Key name to use for event handlers. Nothing should be
 # accessing this directly so we don't mind something
@@ -78,6 +75,12 @@ A single event has been reserved for cases where a callback dies:
 then this error will be re-thrown. As with the other handlers, you can have more than one C< event_error > handler.
 
 =back
+
+=cut
+
+use List::UtilsBy ();
+use Scalar::Util ();
+use Mixin::Event::Dispatch::Event;
 
 =head1 METHODS
 
