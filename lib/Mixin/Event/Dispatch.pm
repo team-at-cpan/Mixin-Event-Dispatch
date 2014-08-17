@@ -100,18 +100,18 @@ sub invoke_event {
 	my ($self, $event_name, @param) = @_;
 	my $handlers = $self->event_handlers->{$event_name} || [];
 	unless(@$handlers) {
-		local $@;
 		# Legacy flag - when set, pass control to on_$event_name
 		# if we don't have a handler defined.
-		return $self unless $self->EVENT_DISPATCH_ON_FALLBACK;
-		return $self unless my $code = $self->can("on_$event_name");
-		eval {
-			$code->($self, @_);
-			1;
-		} or do {
-			die $@ if $event_name eq 'event_error';
-			$self->invoke_event(event_error => $@) or die "$@ and no event_error handler found";
-		};
+		if($self->EVENT_DISPATCH_ON_FALLBACK && (my $code = $self->can("on_$event_name"))) {
+			local $@;
+			eval {
+				$code->($self, @_);
+				1;
+			} or do {
+				die $@ if $event_name eq 'event_error';
+				$self->invoke_event(event_error => $@) or die "$@ and no event_error handler found";
+			};
+		}
 		return $self;
 	}
 
