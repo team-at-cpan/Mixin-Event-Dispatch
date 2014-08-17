@@ -4,10 +4,9 @@ use strict;
 use warnings;
 use List::UtilsBy ();
 use Scalar::Util ();
-use Try::Tiny;
 use Mixin::Event::Dispatch::Event;
 
-our $VERSION = '1.004';
+our $VERSION = '1.005';
 
 # Key name to use for event handlers. Nothing should be
 # accessing this directly so we don't mind something

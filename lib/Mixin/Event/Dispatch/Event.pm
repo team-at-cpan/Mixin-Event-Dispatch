@@ -2,7 +2,6 @@ package Mixin::Event::Dispatch::Event;
 use strict;
 use warnings;
 use List::UtilsBy ();
-use Try::Tiny;
 use Scalar::Util qw(reftype);
 
 use constant DEBUG => $ENV{MIXIN_EVENT_DISPATCH_DEBUG};
