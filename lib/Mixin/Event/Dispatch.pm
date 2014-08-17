@@ -324,6 +324,10 @@ There are at least a dozen similar modules already on CPAN, here's a small sampl
 
 =over 4
 
+=item * L<Event::Distributor> - uses L<Future> to sequence callbacks, implementing
+the concepts discussed in
+L<Event-Reflexive programming|http://leonerds-code.blogspot.co.uk/search/label/event-reflexive>
+
 =item * L<Object::Event> - event callback interface used in several L<AnyEvent> modules.
 
 =item * L<Ambrosia::Event> - part of the L<Ambrosia> web application framework
