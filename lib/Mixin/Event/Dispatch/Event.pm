@@ -1,6 +1,8 @@
 package Mixin::Event::Dispatch::Event;
+
 use strict;
 use warnings;
+
 use List::UtilsBy ();
 use Scalar::Util qw(reftype);
 
