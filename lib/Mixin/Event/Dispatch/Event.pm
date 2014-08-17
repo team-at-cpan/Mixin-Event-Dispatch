@@ -157,7 +157,7 @@ sub dispatch {
 	# Try::Tiny here is performance; 10k events/sec with Try::Tiny on
 	# an underpowered system, vs. 30k+ with plain eval.
 	eval {
-		while(!$self->is_stopped && @{$self->{handlers}}) {
+		while(!$self->{is_deferred} && @{$self->{handlers}}) {
 			local $self->{current_handler} = my $h = shift @{$self->{handlers}};
 			if(ref $h) {
 				if(reftype($h) eq 'CODE') {
