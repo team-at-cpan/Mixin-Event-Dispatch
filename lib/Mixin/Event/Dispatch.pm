@@ -354,13 +354,13 @@ to/from events using this class
 
 =head1 AUTHOR
 
-Tom Molesworth <cpan@entitymodel.com>
+Tom Molesworth <cpan@perlsite.co.uk>
 
 with thanks to various helpful people on freenode #perl who suggested making L</event_handlers> into an
 accessor (to support non-hashref objects) and who patiently tried to explain about roles.
 
 =head1 LICENSE
 
-Copyright Tom Molesworth 2011-2013, based on code originally part of L<EntityModel>.
+Copyright Tom Molesworth 2011-2014, based on code originally part of L<EntityModel>.
 Licensed under the same terms as Perl itself.
 

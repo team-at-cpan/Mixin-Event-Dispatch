@@ -8,4 +8,3 @@ on 'test' => sub {
 	requires 'Test::Refcount', '>= 0.07';
 };
 
-

@@ -149,7 +149,7 @@ Returns $self.
 sub dispatch {
 	my $self = shift;
 	$self->debug_print("Dispatch with [@_]") if DEBUG;
-	# Support pre-5.14 Perl versions. The only reason for not using
+	# Support pre-5.14 Perl versions. The main reason for not using
 	# Try::Tiny here is performance; 10k events/sec with Try::Tiny on
 	# an underpowered system, vs. 30k+ with plain eval.
 	eval {
@@ -176,9 +176,10 @@ sub dispatch {
 
 =head2 play
 
-Continue the current event. Semantincs are subject to change
-so avoid this and consider L</defer> instead. Currently does
-nothing anyway.
+Continue the current event. Do not use.
+
+Semantics are subject to change so avoid this and consider
+L</defer> instead. Currently does nothing anyway.
 
 Returns $self.
 
@@ -280,9 +281,9 @@ __END__
 
 =head1 AUTHOR
 
-Tom Molesworth <cpan@entitymodel.com>
+Tom Molesworth <cpan@perlsite.co.uk>
 
 =head1 LICENSE
 
-Copyright Tom Molesworth 2012. Licensed under the same terms as Perl itself.
+Copyright Tom Molesworth 2012-2014. Licensed under the same terms as Perl itself.
 
