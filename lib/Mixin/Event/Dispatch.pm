@@ -3,7 +3,7 @@ package Mixin::Event::Dispatch;
 use strict;
 use warnings;
 
-our $VERSION = '1.006';
+our $VERSION = '1.999_001';
 
 # Key name to use for event handlers. Nothing should be
 # accessing this directly so we don't mind something
@@ -38,10 +38,6 @@ Mixin::Event::Dispatch - mixin methods for simple event/message dispatch framewo
  $obj->invoke_event(another_event => 'like this');
  # should get output 'Event data: like this'
  $obj->unsubscribe_from_event(another_event => $code);
-
- $obj->trace_events_for(sub {
-   $obj->invoke_event(another_event => 'like this');
- });
 
  # Note that handlers will be called for each instance of an event until they return false,
  # at which point the handler will be removed, so for a permanent handler, make sure to return 1.
@@ -99,10 +95,11 @@ Returns $self if a handler was found, undef if not.
 sub invoke_event {
 	my ($self, $event_name, @param) = @_;
 	my $handlers = $self->event_handlers->{$event_name} || [];
+	
 	unless(@$handlers) {
 		# Legacy flag - when set, pass control to on_$event_name
 		# if we don't have a handler defined.
-		if($self->EVENT_DISPATCH_ON_FALLBACK && (my $code = $self->can("on_$event_name"))) {
+		if($self->can('EVENT_DISPATCH_ON_FALLBACK') && $self->EVENT_DISPATCH_ON_FALLBACK && (my $code = $self->can("on_$event_name"))) {
 			local $@;
 			eval {
 				$code->($self, @_);
@@ -310,8 +307,9 @@ L<add_handler_for_event> are expected to be called directly).
 
 =head1 ROLE vs. MIXIN
 
-Most role systems should be able to use this class - either directly, or through a thin wrapper which adds
-any required boilerplate. Try L<Moose> or L<Role::Tiny> / L<Moo::Role> for that.
+Role systems might work using the L<Mixin::Event::Dispatch::Methods> module, which allows
+import of the relevant methods. Try combing this with a thin wrapper using L<Role::Tiny> / L<Moo::Role> /
+L<Moose> for that.
 
 Alternatively, you could use this as a component via L<Class::C3::Componentised>.
 
@@ -338,9 +336,11 @@ L<Event-Reflexive programming|http://leonerds-code.blogspot.co.uk/search/label/e
 
 =item * L<MooseX::Event> - node.js-inspired events, for Moose users
 
+=item * L<Beam::Emitter> - a L<Moo::Role> for event handling
+
 =back
 
-Note that some frameworks such as L<Reflex> and L<POE> already have comprehensive message-passing
+Note that some frameworks such as L<Reflex>, L<POE> and L<Mojolicious> already have comprehensive message-passing
 and callback interfaces.
 
 If you're looking for usage examples, try the following:
@@ -372,6 +372,6 @@ accessor (to support non-hashref objects) and who patiently tried to explain abo
 
 =head1 LICENSE
 
-Copyright Tom Molesworth 2011-2014, based on code originally part of L<EntityModel>.
+Copyright Tom Molesworth 2011-2015, based on code originally part of L<EntityModel>.
 Licensed under the same terms as Perl itself.
 
