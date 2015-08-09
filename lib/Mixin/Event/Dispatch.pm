@@ -300,6 +300,8 @@ __END__
 
 =head1 API HISTORY
 
+Version 2.000 (will) implement the L<Mixin::Event::Dispatch::Methods> class.
+
 Version 1.000 implemented L</subscribe_to_event> and L<Mixin::Event::Dispatch::Event>.
 
 Version 0.002 changed to use L</event_handlers> instead of C< event_stack > for storing the available handlers (normally only L<invoke_event> and
@@ -309,11 +311,12 @@ L<add_handler_for_event> are expected to be called directly).
 
 Role systems might work using the L<Mixin::Event::Dispatch::Methods> module, which allows
 import of the relevant methods. Try combing this with a thin wrapper using L<Role::Tiny> / L<Moo::Role> /
-L<Moose> for that.
+L<Moose> for that. The C<t/moo-role.t> and C<t/role-tiny.t> tests may provide some
+inspiration.
 
-Alternatively, you could use this as a component via L<Class::C3::Componentised>.
+Alternatively, you could perhaps use this as a component via L<Class::C3::Componentised>.
 
-(I haven't tried any of the above options myself, please let me know if I'm spreading
+(I haven't really used any of the above options myself, please let me know if I'm spreading
 disinformation here)
 
 =head1 SEE ALSO
@@ -369,6 +372,9 @@ Tom Molesworth <cpan@perlsite.co.uk>
 
 with thanks to various helpful people on freenode #perl who suggested making L</event_handlers> into an
 accessor (to support non-hashref objects) and who patiently tried to explain about roles.
+
+L<Mixin::Event::Dispatch::Methods> suggested by mst, primarily for better integration with object
+systems such as Moo(se).
 
 =head1 LICENSE
 
