@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+1.999_001 2015-08-09 22:43:51+01:00 Europe/London (TRIAL RELEASE)
 	Features:
 	* Mixin::Event::Dispatch::Methods for importing without inheriting
 	* Removed mention of ->trace_events_for, this was removed a while ago
