@@ -1,4 +1,10 @@
 {{$NEXT}}
+	No new features.
+
+	Tests:
+	* Include t/moose-role.t, which uses MooseX::MarkAsMethods to populate
+	a Moose role. Note that passing autoclean => 1 means the ->mark_as_methods
+	call would need to be wrapped in a BEGIN block or similar.
 
 1.999_001 2015-08-09 22:43:51+01:00 Europe/London (TRIAL RELEASE)
 	Features:
