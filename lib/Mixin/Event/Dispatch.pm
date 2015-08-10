@@ -3,7 +3,7 @@ package Mixin::Event::Dispatch;
 use strict;
 use warnings;
 
-our $VERSION = '1.999_001';
+our $VERSION = '1.999_002';
 
 # Key name to use for event handlers. Nothing should be
 # accessing this directly so we don't mind something
